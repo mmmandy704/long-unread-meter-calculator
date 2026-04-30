@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Long Unread Meter Fine Calculator</title>
+<style>
+  :root { --bg:#f6fbfc; --card:#ffffff; --text:#102033; --muted:#5b6b7a; --accent:#0f7996; --accent2:#e8f6fa; --line:#d9e6eb; --good:#e9f8ef; }
+  body { margin:0; font-family: Arial, Helvetica, sans-serif; background:var(--bg); color:var(--text); }
+  .wrap { max-width:820px; margin:32px auto; padding:0 18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:18px; box-shadow:0 8px 24px rgba(16,32,51,.08); overflow:hidden; }
+  .hero { padding:28px; background:linear-gradient(135deg, var(--accent2), #fff); border-bottom:1px solid var(--line); }
+  h1 { margin:0 0 8px; font-size:28px; line-height:1.2; }
+  p { margin:0; color:var(--muted); line-height:1.5; }
+  .content { padding:28px; }
+  label { display:block; font-weight:700; margin-bottom:8px; }
+  input { width:100%; box-sizing:border-box; font-size:22px; padding:14px 16px; border:1px solid var(--line); border-radius:12px; outline:none; }
+  input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(15,121,150,.14); }
+  .tabs { display:flex; gap:10px; margin:24px 0 18px; flex-wrap:wrap; }
+  button { border:1px solid var(--line); background:#fff; padding:12px 16px; border-radius:999px; cursor:pointer; font-weight:700; color:var(--text); }
+  button.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
+  .tile { border:1px solid var(--line); border-radius:14px; padding:18px; background:#fff; }
+  .tile strong { display:block; font-size:14px; color:var(--muted); margin-bottom:8px; }
+  .tile span { display:block; font-size:26px; font-weight:800; }
+  .total { background:var(--good); }
+  .note { margin-top:18px; padding:14px 16px; background:#f8fafc; border:1px solid var(--line); border-radius:12px; color:var(--muted); font-size:14px; }
+  @media (max-width:700px) { .grid { grid-template-columns:1fr; } h1 { font-size:24px; } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="hero">
+        <h1>Long Unread Meter Fine Calculator</h1>
+        <p>Enter the number of long unread meters to estimate the potential fine exposure.</p>
+      </div>
+      <div class="content">
+        <label for="meters">Number of long unread meters</label>
+        <input id="meters" type="text" inputmode="decimal" value="15,160" aria-label="Number of long unread meters" />
+        <div class="tabs" role="tablist" aria-label="Fine scenarios">
+          <button id="tab-year" class="active" type="button">1 year no action</button>
+          <button id="tab-extra" type="button">18 months–2 years additional</button>
+          <button id="tab-total" type="button">Total exposure</button>
+        </div>
+        <div class="grid">
+          <div class="tile">
+            <strong>Meters entered</strong>
+            <span id="meterOut">15,160</span>
+          </div>
+          <div class="tile">
+            <strong id="rateLabel">Fine rate</strong>
+            <span id="rateOut">£40</span>
+          </div>
+          <div class="tile total">
+            <strong id="resultLabel">Estimated fine</strong>
+            <span id="resultOut">£606,400</span>
+          </div>
+        </div>
+        <div class="note" id="note">Calculation: long unread meters × £40 for 1 year of no action.</div>
+      </div>
+    </div>
+  </div>
+<script>
+(function(){
+  const meters = document.getElementById('meters');
+  const meterOut = document.getElementById('meterOut');
+  const rateOut = document.getElementById('rateOut');
+  const rateLabel = document.getElementById('rateLabel');
+  const resultOut = document.getElementById('resultOut');
+  const resultLabel = document.getElementById('resultLabel');
+  const note = document.getElementById('note');
+  const tabs = {
+    year: document.getElementById('tab-year'),
+    extra: document.getElementById('tab-extra'),
+    total: document.getElementById('tab-total')
+  };
+  let mode = 'year';
+  const pounds = n => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n || 0);
+  const number = n => new Intl.NumberFormat('en-GB',{maximumFractionDigits:0}).format(n || 0);
+  function value(){ return Number(String(meters.value).replace(/[^0-9.]/g,'')) || 0; }
+  function activate(next){ mode = next; Object.keys(tabs).forEach(k => tabs[k].classList.toggle('active', k === mode)); update(); }
+  function update(){
+    const m = value();
+    const year = m * 40;
+    const extra = m * 80;
+    meterOut.textContent = number(m);
+    if(mode === 'year'){
+      rateLabel.textContent = 'Fine rate'; rateOut.textContent = '£40'; resultLabel.textContent = 'Estimated fine'; resultOut.textContent = pounds(year);
+      note.textContent = 'Calculation: long unread meters × £40 for 1 year of no action.';
+    } else if(mode === 'extra'){
+      rateLabel.textContent = 'Additional rate'; rateOut.textContent = '£80'; resultLabel.textContent = 'Additional fine'; resultOut.textContent = pounds(extra);
+      note.textContent = 'Calculation: long unread meters × £80 additional charge if no action after 18 months to 2 years.';
+    } else {
+      rateLabel.textContent = 'Combined rate'; rateOut.textContent = '£120'; resultLabel.textContent = 'Total potential exposure'; resultOut.textContent = pounds(year + extra);
+      note.textContent = 'Calculation: year 1 fine plus additional 18 months–2 years charge.';
+    }
+  }
+  meters.addEventListener('input', update);
+  meters.addEventListener('blur', () => { meters.value = number(value()); update(); });
+  tabs.year.addEventListener('click', () => activate('year'));
+  tabs.extra.addEventListener('click', () => activate('extra'));
+  tabs.total.addEventListener('click', () => activate('total'));
+  update();
+})();
+</script>
+</body>
+</html>
